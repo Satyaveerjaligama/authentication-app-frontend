@@ -9,6 +9,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 import { ChangeEvent, useState } from "react";
 import * as yup from "yup";
 
@@ -18,6 +20,7 @@ interface FormErrors {
 }
 
 export default function Login() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     emailOrPhone: "",
     password: "",
@@ -26,16 +29,18 @@ export default function Login() {
     emailOrPhone: "",
     password: "",
   });
+  const [loading, setLoading] = useState(false);
 
   const onChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setFormErrors({ ...formErrors, [e.target.name]: "" });
   };
 
-  const submitHandler = async () => {
+  const validateForm = async () => {
     try {
       await loginValidations.validate(formData, { abortEarly: false });
       setFormErrors({ emailOrPhone: "", password: "" });
+      return true;
     } catch (err) {
       if (err instanceof yup.ValidationError) {
         const errors: FormErrors = {};
@@ -46,6 +51,33 @@ export default function Login() {
         });
         setFormErrors(errors);
       }
+      return false;
+    }
+  };
+
+  const submitHandler = async () => {
+    const isDetailsValid = await validateForm();
+    if (isDetailsValid) {
+      setLoading(true);
+      axios({
+        method: "POST",
+        url: "http://localhost:8000/user/v1/login",
+        data: {
+          ...formData,
+        },
+      })
+        .then((res) => {
+          if (res.status === 200) {
+            localStorage.setItem("token", res.data?.token);
+            router.push("/home");
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
   };
 
@@ -82,7 +114,12 @@ export default function Login() {
               />
             </Grid>
             <Grid item xs={12}>
-              <Button variant="contained" fullWidth onClick={submitHandler}>
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={submitHandler}
+                loading={loading}
+              >
                 Submit
               </Button>
             </Grid>
