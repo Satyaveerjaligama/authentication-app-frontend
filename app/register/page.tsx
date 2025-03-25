@@ -9,6 +9,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 import { ChangeEvent, useState } from "react";
 import * as yup from "yup";
 
@@ -16,29 +18,35 @@ interface FormErrors {
   emailOrPhone?: string;
   password?: string;
   retypePassword?: string;
+  name?: string;
 }
 
 export default function Register() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     emailOrPhone: "",
     password: "",
     retypePassword: "",
+    name: "",
   });
   const [formErrors, setFormErrors] = useState<FormErrors>({
     emailOrPhone: "",
     password: "",
     retypePassword: "",
+    name: "",
   });
+  const [loading, setLoading] = useState(false);
 
   const onChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setFormErrors({ ...formErrors, [e.target.name]: "" });
   };
 
-  const submitHandler = async () => {
+  const validateRegister = async () => {
     try {
       await registerValidations.validate(formData, { abortEarly: false });
       setFormErrors({ emailOrPhone: "", password: "", retypePassword: "" });
+      return true;
     } catch (err) {
       if (err instanceof yup.ValidationError) {
         const errors: FormErrors = {};
@@ -48,6 +56,34 @@ export default function Register() {
           }
         });
         setFormErrors(errors);
+      }
+      return false;
+    }
+  };
+
+  const submitHandler = async () => {
+    const isDetailsValid = await validateRegister();
+    if (isDetailsValid) {
+      if (isDetailsValid) {
+        setLoading(true);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { retypePassword, ...data } = formData;
+        axios({
+          method: "POST",
+          url: "http://localhost:8000/user/v1/register",
+          data,
+        })
+          .then((res) => {
+            if (res.status === 201) {
+              router.push("/login");
+            }
+          })
+          .catch((err) => {
+            console.log(err);
+          })
+          .finally(() => {
+            setLoading(false);
+          });
       }
     }
   };
@@ -70,6 +106,18 @@ export default function Register() {
                 onChange={onChange}
                 error={formErrors.emailOrPhone !== ""}
                 helperText={formErrors.emailOrPhone}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Name"
+                type="text"
+                name="name"
+                fullWidth
+                value={formData.name}
+                onChange={onChange}
+                error={formErrors.name !== ""}
+                helperText={formErrors.name}
               />
             </Grid>
             <Grid item xs={12}>
@@ -97,7 +145,12 @@ export default function Register() {
               />
             </Grid>
             <Grid item xs={12}>
-              <Button variant="contained" fullWidth onClick={submitHandler}>
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={submitHandler}
+                loading={loading}
+              >
                 Register
               </Button>
             </Grid>
