@@ -1,4 +1,5 @@
 "use client";
+import { API_ENDPOINTS } from "@/utilities/constants";
 import registerValidations from "@/validations/registerValidations";
 import {
   Box,
@@ -10,9 +11,11 @@ import {
   Typography,
 } from "@mui/material";
 import axios from "axios";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useContext, useState } from "react";
 import * as yup from "yup";
+import { SnackBarContext } from "../layout";
 
 interface FormErrors {
   emailOrPhone?: string;
@@ -36,6 +39,7 @@ export default function Register() {
     name: "",
   });
   const [loading, setLoading] = useState(false);
+  const { setOpen, setMessage } = useContext(SnackBarContext);
 
   const onChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -70,16 +74,19 @@ export default function Register() {
         const { retypePassword, ...data } = formData;
         axios({
           method: "POST",
-          url: "http://localhost:8000/user/v1/register",
+          url: `${process.env.USER_API}/${API_ENDPOINTS.REGISTER}`,
           data,
         })
           .then((res) => {
             if (res.status === 201) {
+              setOpen(true);
+              setMessage(`${res.data.message}, Please login`);
               router.push("/login");
             }
           })
           .catch((err) => {
-            console.log(err);
+            setOpen(true);
+            setMessage(err.response.data.message);
           })
           .finally(() => {
             setLoading(false);
@@ -94,7 +101,9 @@ export default function Register() {
         <CardContent className="p-4">
           <Grid container rowSpacing={2} className="text-center">
             <Grid item xs={12}>
-              <Typography variant="h5">Register</Typography>
+              <Typography variant="h5" className="!font-bold">
+                Register
+              </Typography>
             </Grid>
             <Grid item xs={12}>
               <TextField
@@ -153,6 +162,14 @@ export default function Register() {
               >
                 Register
               </Button>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography>
+                Already have an account ?{" "}
+                <Link href="/login" className="underline text-blue-600">
+                  Login
+                </Link>
+              </Typography>
             </Grid>
           </Grid>
         </CardContent>

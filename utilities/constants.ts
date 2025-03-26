@@ -12,3 +12,9 @@ export const REGULAR_EXPRESSIONS = {
   EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   PHONE: /^[0-9]{10}$/,
 };
+
+export const API_ENDPOINTS = {
+  REGISTER: "/register",
+  LOGIN: "/login",
+  TEST: "/test",
+};
