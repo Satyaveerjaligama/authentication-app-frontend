@@ -1,4 +1,5 @@
 "use client";
+import { API_ENDPOINTS } from "@/utilities/constants";
 import loginValidations from "@/validations/loginValidations";
 import {
   Box,
@@ -10,9 +11,11 @@ import {
   Typography,
 } from "@mui/material";
 import axios from "axios";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useContext, useState } from "react";
 import * as yup from "yup";
+import { SnackBarContext } from "../layout";
 
 interface FormErrors {
   emailOrPhone?: string;
@@ -30,6 +33,7 @@ export default function Login() {
     password: "",
   });
   const [loading, setLoading] = useState(false);
+  const { setOpen, setMessage } = useContext(SnackBarContext);
 
   const onChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -61,13 +65,15 @@ export default function Login() {
       setLoading(true);
       axios({
         method: "POST",
-        url: "http://localhost:8000/user/v1/login",
+        url: `${process.env.USER_API}/${API_ENDPOINTS.LOGIN}`,
         data: {
           ...formData,
         },
       })
         .then((res) => {
           if (res.status === 200) {
+            setOpen(true);
+            setMessage("Login successful");
             localStorage.setItem("token", res.data?.token);
             router.push("/home");
           }
@@ -87,7 +93,9 @@ export default function Login() {
         <CardContent className="p-4">
           <Grid container rowSpacing={2} className="text-center">
             <Grid item xs={12}>
-              <Typography variant="h5">Login</Typography>
+              <Typography variant="h5" className="!font-bold">
+                Login
+              </Typography>
             </Grid>
             <Grid item xs={12}>
               <TextField
@@ -122,6 +130,14 @@ export default function Login() {
               >
                 Submit
               </Button>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography>
+                Don&apos;t have an account ?{" "}
+                <Link href="/register" className="underline text-blue-600">
+                  Register
+                </Link>
+              </Typography>
             </Grid>
           </Grid>
         </CardContent>
